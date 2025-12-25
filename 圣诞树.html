@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Hello Kitty Christmas Dream</title>
+    <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Quicksand:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --pink-main: #FF69B4;
+            --pink-light: #FFB6C1;
+            --bg-deep: #4a1c40; 
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            /* 1. 背景微调：将中心的粉色光晕调得更淡 (#2d1220 -> #1a0810) */
+            background-color: #000;
+            background: radial-gradient(circle at center, #1a0810 0%, #000000 70%);
+            height: 100vh;
+            overflow: hidden;
+            font-family: 'Quicksand', sans-serif;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            user-select: none;
+            position: relative;
+        }
+
+        .star {
+            position: absolute;
+            background: #fff;
+            border-radius: 50%;
+            animation: twinkle 2s infinite alternate;
+            z-index: 0;
+            pointer-events: none;
+        }
+        @keyframes twinkle {
+            0% { opacity: 0; transform: scale(0.5); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        canvas {
+            position: absolute;
+            top: 0; left: 0;
+            z-index: 1;
+            filter: blur(0.3px) contrast(1.1);
+        }
+
+        .ui-layer {
+            position: absolute; z-index: 10; width: 100%; height: 100%;
+            pointer-events: none;
+            display: flex; flex-direction: column; justify-content: space-between;
+            padding: 40px 20px;
+        }
+
+        .header { text-align: center; opacity: 0; animation: fadeDown 1.5s ease-out forwards 0.5s; pointer-events: auto; }
+        .header h1 {
+            font-family: 'Pacifico', cursive; font-size: 3rem;
+            background: linear-gradient(to right, #fff, #FF69B4, #fff);
+            -webkit-background-clip: text; color: transparent;
+            margin-bottom: 5px;
+            filter: drop-shadow(0 0 10px rgba(255,105,180,0.5));
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+        .header h1:hover {
+            transform: scale(1.05);
+            filter: drop-shadow(0 0 15px rgba(255,105,180,0.8));
+        }
+        .header h1::after { content: "❄️"; position: absolute; right: -30px; top: -10px; animation: float 3s infinite alternate; }
+        .header h1::before { content: "❄️"; position: absolute; left: -30px; bottom: -10px; animation: float 3s infinite alternate 0.5s; }
+        @keyframes float { 0% { transform: translateY(0); } 100% { transform: translateY(-10px); } }
+        .header p { font-size: 0.9rem; color: rgba(255,255,255,0.9); background: rgba(255, 105, 180, 0.3); padding: 5px 15px; border-radius: 20px; display: inline-block; box-shadow: 0 2px 10px rgba(255,105,180,0.3); }
+
+        .footer { text-align: center; pointer-events: auto; margin-bottom: 30px; display: flex; gap: 15px; justify-content: center; }
+        .action-btn {
+            background: rgba(255, 255, 255, 0.2); border: 2px solid #fff; color: #fff;
+            padding: 10px 30px; font-weight: 700; border-radius: 50px; cursor: pointer;
+            backdrop-filter: blur(5px); transition: 0.3s;
+            box-shadow: 0 0 20px rgba(255, 182, 193, 0.5);
+            font-size: 1rem;
+        }
+        .action-btn:hover { 
+            background: linear-gradient(to right, #ff69b4, #ff8da1); 
+            transform: scale(1.05); 
+            box-shadow: 0 0 40px rgba(255, 105, 180, 0.8);
+        }
+
+        .music-control {
+            position: absolute; top: 30px; right: 30px; width: 40px; height: 40px;
+            border: 2px solid rgba(255,255,255,0.8); border-radius: 50%;
+            display: flex; justify-content: center; align-items: center;
+            cursor: pointer; pointer-events: auto; opacity: 0.9;
+            background: rgba(255, 105, 180, 0.3);
+            transition: 0.3s;
+        }
+        .music-control:hover { transform: scale(1.1); }
+        .playing { animation: spin 4s linear infinite; }
+        
+        /* 全屏按钮样式 */
+        .fullscreen-control {
+            position: absolute; bottom: 30px; right: 30px; width: 40px; height: 40px;
+            border: 2px solid rgba(255,255,255,0.8); border-radius: 50%;
+            display: flex; justify-content: center; align-items: center;
+            cursor: pointer; pointer-events: auto; opacity: 0.9;
+            background: rgba(255, 105, 180, 0.3);
+            transition: 0.3s;
+            color: white;
+        }
+        .fullscreen-control:hover { transform: scale(1.1); background: rgba(255, 105, 180, 0.5); }
+        .fullscreen-control svg { width: 20px; height: 20px; }
+
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        @keyframes fadeDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+
+        .overlay { position: fixed; inset: 0; background: rgba(87, 28, 62, 0.9); z-index: 100; display: flex; justify-content: center; align-items: center; opacity: 0; visibility: hidden; transition: 0.5s; backdrop-filter: blur(10px); }
+        .overlay.active { opacity: 1; visibility: visible; }
+        
+        .card { background: linear-gradient(145deg, #fff, #fff0f5); width: 85%; max-width: 400px; padding: 40px 30px; border-radius: 20px; text-align: center; color: #333; transform: scale(0.9); transition: 0.5s; border: 4px solid #fff; box-shadow: 0 20px 50px rgba(100,0,50,0.4); position: relative; }
+        .overlay.active .card { transform: scale(1); }
+        .card h2 { font-family: 'Pacifico'; color: var(--pink-main); margin-bottom: 20px; font-size: 2rem; }
+        
+        .close-btn { 
+            margin-top: 20px; border: none; 
+            background: linear-gradient(to right, #ff69b4, #ff8da1); 
+            color: white; padding: 10px 30px; border-radius: 20px; cursor: pointer; font-weight: bold; transition: 0.3s;
+        }
+        .close-btn:hover { box-shadow: 0 0 15px var(--pink-main); transform: scale(1.05); }
+
+        .photo-frame {
+            background: white; padding: 10px 10px 40px 10px; box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            transform: rotate(-3deg); margin: 0 auto 20px auto; width: 80%; max-width: 250px;
+            border-radius: 4px; transition: transform 0.3s; border: 3px dashed #ff69b4; position: relative;
+            cursor: pointer;
+        }
+        .photo-frame:hover { transform: rotate(0deg) scale(1.05); z-index: 10; }
+        .photo-frame img { width: 100%; height: auto; min-height: 150px; object-fit: cover; display: block; border: 1px solid #ffeef0; background: #f0f0f0; }
+        .photo-date { display: block; margin-top: 10px; font-family: 'Pacifico', cursive; color: #ff69b4; font-size: 1rem; }
+        .photo-frame::before, .photo-frame::after { content: "🎀"; font-size: 20px; position: absolute; z-index: 1; }
+        .photo-frame::before { top: -10px; left: -10px; }
+        .photo-frame::after { bottom: 5px; right: -10px; }
+
+        /* 使用 class 而不是 id，避免重复id问题，并用于js选择 */
+        .msg-line { 
+            line-height: 1.8; margin: 10px 0; color: #4a1c40; 
+            background: linear-gradient(to right, #873663, #ff69b4, #873663); 
+            -webkit-background-clip: text; color: transparent; 
+            animation: breath 3s infinite alternate; font-weight: bold;
+        }
+        @keyframes breath { 0% { opacity: 0.8; transform: scale(1); } 100% { opacity: 1; transform: scale(1.02); } }
+
+        /* 设置面板样式 */
+        .settings-content { text-align: left; }
+        .setting-item { margin-bottom: 20px; }
+        .setting-item label { display:block; margin-bottom: 8px; color: var(--bg-deep); font-weight: bold; }
+        
+        .file-control { display: flex; justify-content: space-between; align-items: center; }
+        
+        /* 文本框样式 */
+        #messageInput {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid var(--pink-light);
+            border-radius: 10px;
+            background: rgba(255,255,255,0.8);
+            font-family: 'Quicksand', sans-serif;
+            color: var(--bg-deep);
+            font-size: 0.9rem;
+            resize: vertical;
+            min-height: 80px;
+        }
+        #messageInput:focus { outline: none; border-color: var(--pink-main); }
+
+        .file-btn { background: var(--pink-light); color: #fff; padding: 8px 15px; border-radius: 15px; font-size: 0.9rem; border: none; cursor: pointer; }
+        
+        #photoInput, #musicInput { display: none; }
+    </style>
+</head>
+<body>
+
+    <!-- 音乐文件可根据需要更换 -->
+    <audio id="bgm" loop>
+        <source src="love.mp3" type="audio/mpeg">
+    </audio>
+
+    <div class="ui-layer">
+        <div class="header">
+            <!-- 点击 Merry Christmas 打开设置 -->
+            <h1 onclick="openSettings()">Merry Christmas</h1>
+            <p>Kitty's Magic Snow 🎀</p>
+        </div>
+        <div class="music-control" onclick="toggleMusic()">🎵</div>
+        
+        <!-- 全屏按钮 -->
+        <div class="fullscreen-control" onclick="toggleFullScreen()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
+            </svg>
+        </div>
+
+        <div class="footer">
+            <button class="action-btn" onclick="openCard()">打开信件</button>
+        </div>
+    </div>
+
+    <canvas id="world"></canvas>
+
+    <!-- 信件弹窗 -->
+    <div class="overlay" id="cardOverlay">
+        <div class="card">
+            <h2>Dear You</h2>
+            
+            <div class="photo-frame" onclick="document.getElementById('photoInput').click()">
+                <img id="displayPhoto" src="https://placehold.co/400x400/FFB6C1/white?text=Our+Photo" alt="点击更换照片">
+                <span class="photo-date">Forever & Always ❤️</span>
+            </div>
+        
+            <!-- 包裹文字的容器 -->
+            <div id="message-container">
+                <p class="msg-line">宝宝，我想要一直在你身边！</p>
+                <p class="msg-line">圣诞节快乐哦！天天开心✨</p>
+            </div>
+            
+            <button class="close-btn" onclick="closeCard()">Close</button>
+        </div>
+    </div>
+
+    <!-- 自定义设置弹窗 -->
+    <div class="overlay" id="settingsOverlay">
+        <div class="card">
+            <h2>Customize</h2>
+            <div class="settings-content">
+                <!-- 新增：文字编辑功能 -->
+                <div class="setting-item">
+                    <label>信件内容 ✍️</label>
+                    <textarea id="messageInput" rows="4"></textarea>
+                </div>
+
+                <div class="setting-item">
+                    <div class="file-control">
+                        <label style="margin:0">更换照片 📸</label>
+                        <button class="file-btn" onclick="document.getElementById('photoInput').click()">选择图片</button>
+                    </div>
+                </div>
+                <div class="setting-item">
+                    <div class="file-control">
+                        <label style="margin:0">更换音乐 🎵</label>
+                        <button class="file-btn" onclick="document.getElementById('musicInput').click()">选择音乐</button>
+                    </div>
+                </div>
+                <div class="setting-item">
+                     <p style="font-size:0.8rem; color:#888; text-align:center; margin-top:10px;">提示: 点击"打开信件"里的照片也可以直接更换哦~</p>
+                </div>
+            </div>
+            <!-- 绑定保存并关闭 -->
+            <button class="close-btn" onclick="saveAndCloseSettings()">Done</button>
+        </div>
+    </div>
+
+    <input type="file" id="photoInput" accept="image/*">
+    <input type="file" id="musicInput" accept="audio/*">
+
+    <script>
+        const canvas = document.getElementById('world');
+        const ctx = canvas.getContext('2d');
+        
+        let width, height;
+        let particles = [];
+        let rotation = 0;
+        let targetRotation = 0;
+        
+        let kittySprite;
+        const KITTY_SPRITE_SIZE = 256; 
+
+        function createKittySprite() {
+            const c = document.createElement('canvas');
+            c.width = KITTY_SPRITE_SIZE;
+            c.height = KITTY_SPRITE_SIZE;
+            const cCtx = c.getContext('2d');
+            
+            cCtx.translate(KITTY_SPRITE_SIZE/2, KITTY_SPRITE_SIZE/2);
+            const s = KITTY_SPRITE_SIZE * 0.4; 
+
+            cCtx.shadowBlur = 8;
+            cCtx.shadowColor = "rgba(255,255,255,0.6)";
+
+            // Kitty Draw Logic
+            cCtx.fillStyle = 'white';
+            cCtx.beginPath(); cCtx.ellipse(0, 0, s * 1.1, s * 0.9, 0, 0, Math.PI*2); cCtx.fill();
+
+            cCtx.fillStyle = 'white';
+            cCtx.beginPath(); cCtx.moveTo(-s*0.8, -s*0.5); cCtx.quadraticCurveTo(-s*1.0, -s*1.1, -s*0.5, -s*0.8); cCtx.quadraticCurveTo(-s*0.6, -s*0.6, -s*0.8, -s*0.5); cCtx.fill();
+            cCtx.beginPath(); cCtx.moveTo(s*0.8, -s*0.5); cCtx.quadraticCurveTo(s*1.0, -s*1.1, s*0.5, -s*0.8); cCtx.quadraticCurveTo(s*0.6, -s*0.6, s*0.8, -s*0.5); cCtx.fill();
+            
+            cCtx.fillStyle = 'rgba(255, 182, 193, 0.9)';
+            cCtx.beginPath(); cCtx.moveTo(-s*0.75, -s*0.6); cCtx.quadraticCurveTo(-s*0.9, -s*1.0, -s*0.55, -s*0.8); cCtx.quadraticCurveTo(-s*0.65, -s*0.7, -s*0.75, -s*0.6); cCtx.fill();
+            cCtx.beginPath(); cCtx.moveTo(s*0.75, -s*0.6); cCtx.quadraticCurveTo(s*0.9, -s*1.0, s*0.55, -s*0.8); cCtx.quadraticCurveTo(s*0.65, -s*0.7, s*0.75, -s*0.6); cCtx.fill();
+
+            cCtx.fillStyle = 'black';
+            cCtx.beginPath(); cCtx.ellipse(-s*0.4, -s*0.2, s*0.15, s*0.2, 0, 0, Math.PI*2); cCtx.fill();
+            cCtx.beginPath(); cCtx.ellipse(s*0.4, -s*0.2, s*0.15, s*0.2, 0, 0, Math.PI*2); cCtx.fill();
+            cCtx.fillStyle = 'white';
+            cCtx.beginPath(); cCtx.ellipse(-s*0.35, -s*0.25, s*0.05, s*0.07, 0, 0, Math.PI*2); cCtx.fill();
+            cCtx.beginPath(); cCtx.ellipse(s*0.45, -s*0.25, s*0.05, s*0.07, 0, 0, Math.PI*2); cCtx.fill();
+
+            cCtx.strokeStyle = 'black';
+            cCtx.lineWidth = s * 0.03;
+            cCtx.beginPath(); cCtx.moveTo(-s*0.5, 0); cCtx.lineTo(-s*1.0, -s*0.1); cCtx.stroke();
+            cCtx.beginPath(); cCtx.moveTo(-s*0.5, s*0.1); cCtx.lineTo(-s*1.0, s*0.1); cCtx.stroke();
+            cCtx.beginPath(); cCtx.moveTo(-s*0.5, s*0.2); cCtx.lineTo(-s*1.0, s*0.3); cCtx.stroke();
+            cCtx.beginPath(); cCtx.moveTo(s*0.5, 0); cCtx.lineTo(s*1.0, -s*0.1); cCtx.stroke();
+            cCtx.beginPath(); cCtx.moveTo(s*0.5, s*0.1); cCtx.lineTo(s*1.0, s*0.1); cCtx.stroke();
+            cCtx.beginPath(); cCtx.moveTo(s*0.5, s*0.2); cCtx.lineTo(s*1.0, s*0.3); cCtx.stroke();
+
+            cCtx.fillStyle = 'black';
+            cCtx.beginPath(); cCtx.arc(0, 0, s*0.1, 0, Math.PI*2); cCtx.fill();
+
+            cCtx.fillStyle = 'rgba(255, 182, 193, 0.7)';
+            cCtx.beginPath(); cCtx.arc(-s*0.7, s*0.1, s*0.25, 0, Math.PI*2); cCtx.fill();
+            cCtx.beginPath(); cCtx.arc(s*0.7, s*0.1, s*0.25, 0, Math.PI*2); cCtx.fill();
+
+            cCtx.fillStyle = '#ff69b4'; 
+            cCtx.beginPath(); cCtx.moveTo(s*0.6, -s*0.6); cCtx.lineTo(s*0.4, -s*0.8); cCtx.lineTo(s*0.4, -s*0.4); cCtx.fill();
+            cCtx.beginPath(); cCtx.moveTo(s*0.8, -s*0.6); cCtx.lineTo(s*1.0, -s*0.8); cCtx.lineTo(s*1.0, -s*0.4); cCtx.fill();
+            cCtx.beginPath(); cCtx.arc(s*0.7, -s*0.6, s*0.08, 0, Math.PI*2); cCtx.fill();
+
+            cCtx.fillStyle = '#ff0000';
+            cCtx.beginPath(); cCtx.moveTo(-s*0.5, -s*1.0); cCtx.lineTo(0, -s*1.4); cCtx.lineTo(s*0.5, -s*1.0); cCtx.fill();
+            cCtx.fillStyle = 'white';
+            cCtx.beginPath(); cCtx.arc(0, -s*1.0, s*0.5, 0, Math.PI); cCtx.fill();
+            cCtx.beginPath(); cCtx.arc(0, -s*1.4, s*0.15, 0, Math.PI*2); cCtx.fill();
+
+            return c;
+        }
+
+        // 粒子类型定义
+        const P_TYPE = {
+            TREE: 1, ORNAMENT: 2, STAR: 3, KITTY_ON_TREE: 4, BOW: 5, SNOW_KITTY: 6, PINK_DUST: 7, WHITE_DUST: 8
+        };
+
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        class Particle {
+            constructor(type) {
+                this.type = type;
+                this.init();
+            }
+
+            init() {
+                this.x = 0; this.y = 0; this.z = 0;
+                this.size = 1; this.opacity = 1;
+                this.drawAlpha = 0;
+
+                if (this.type === P_TYPE.SNOW_KITTY) {
+                    this.x = (Math.random() - 0.5) * width * 1.5; 
+                    this.y = -Math.random() * height;
+                    this.z = (Math.random() - 0.5) * width;
+                    this.vy = 1 + Math.random() * 1.5;
+                    this.ownRotation = Math.random() * Math.PI * 2;
+                    this.vRotation = (Math.random() - 0.5) * 0.02;
+                    this.size = 8 + Math.random() * 10; 
+                    this.opacity = 0.5 + Math.random() * 0.5;
+                    return;
+                }
+                
+                // 原粉色粒子初始化 (现在改为白色)
+                if (this.type === P_TYPE.PINK_DUST) {
+                    this.x = (Math.random() - 0.5) * width * 2;
+                    this.y = (Math.random() - 0.5) * height * 2;
+                    this.z = (Math.random() - 0.5) * width * 2;
+                    this.size = 1 + Math.random() * 2; 
+                    // 修改点：颜色改为纯白
+                    this.color = `hsla(0, 0%, 100%,`; 
+                    this.opacity = 0.4 + Math.random() * 0.5;
+                    this.vy = -(0.2 + Math.random() * 0.3); 
+                    return;
+                }
+                
+                // 白色粒子初始化 (保持不变，与上面的效果叠加)
+                if (this.type === P_TYPE.WHITE_DUST) {
+                    this.x = (Math.random() - 0.5) * width * 2;
+                    this.y = (Math.random() - 0.5) * height * 2;
+                    this.z = (Math.random() - 0.5) * width * 2;
+                    this.size = 0.5 + Math.random() * 1.5;
+                    this.color = `hsla(0, 0%, 100%,`;
+                    this.opacity = 0.3 + Math.random() * 0.5;
+                    this.vy = -(0.1 + Math.random() * 0.3);
+                    return;
+                }
+
+                // 2. 圣诞树位置控制
+                const treeHeight = height * 0.7;
+                // --- 控制圣诞树垂直位置 (数值越大越靠下) ---
+                //const treeTopY = height * 0.25; 
+                const treeTopY = height * 0.35; 
+                
+                const maxRadius = Math.min(width, height) * 0.45;
+
+                const h = Math.random(); 
+                this.y = treeTopY + h * treeHeight;
+                const currentMaxRadius = h * maxRadius;
+                
+                const r = Math.sqrt(Math.random()) * currentMaxRadius; 
+                const angle = Math.random() * Math.PI * 2;
+
+                if (this.type === P_TYPE.TREE) {
+                    this.x = Math.cos(angle) * r;
+                    this.z = Math.sin(angle) * r;
+                    const hue = 130 + Math.random() * 30;
+                    this.color = `hsla(${hue}, ${70 + Math.random() * 30}%, ${30 + Math.random() * 20}%,`;
+                    this.size = 2 + Math.random() * 2;
+                    this.opacity = 0.9;
+                } 
+                else if (this.type === P_TYPE.KITTY_ON_TREE || this.type === P_TYPE.BOW || this.type === P_TYPE.ORNAMENT) {
+                    const surfaceR = (0.8 + Math.random() * 0.2) * currentMaxRadius;
+                    this.x = Math.cos(angle) * surfaceR;
+                    this.z = Math.sin(angle) * surfaceR;
+
+                    if (this.type === P_TYPE.KITTY_ON_TREE) { this.size = 8; } 
+                    else if (this.type === P_TYPE.BOW) { this.size = 6; } 
+                    else {
+                        this.color = Math.random()>0.5 ? 'hsla(340, 100%, 70%,' : 'hsla(0, 0%, 100%,';
+                        this.size = 3 + Math.random()*3;
+                    }
+                }
+                else if (this.type === P_TYPE.STAR) {
+                    this.y = treeTopY - 10; this.x = 0; this.z = 0;
+                    this.color = 'hsla(50, 100%, 80%,'; this.size = 15;
+                }
+            }
+
+            update() {
+                const focal = 800;
+                
+                if (this.type === P_TYPE.SNOW_KITTY) {
+                    this.y += this.vy;
+                    this.ownRotation += this.vRotation;
+                    
+                    if (this.y > height + 50) {
+                        this.y = -50;
+                        this.x = (Math.random() - 0.5) * width * 1.5;
+                    }
+
+                    const scale = focal / (focal + this.z);
+                    this.projX = width/2 + this.x * scale;
+                    this.projY = this.y * scale;
+                    this.projSize = this.size * scale;
+                    this.drawAlpha = this.opacity * scale;
+                    if (this.z > 200) this.drawAlpha *= 0.5;
+
+                } else {
+                    if (this.type === P_TYPE.TREE) {
+                        this.y += Math.sin(Date.now() * 0.002 + this.x) * 0.1;
+                    }
+
+                    // 粒子动画：缓慢上浮 + 循环
+                    if (this.type === P_TYPE.PINK_DUST || this.type === P_TYPE.WHITE_DUST) {
+                        this.y += this.vy;
+                        if (this.y < -height * 1.2) {
+                             this.y = height * 1.2;
+                             this.x = (Math.random() - 0.5) * width * 2;
+                        }
+                    }
+
+                    const cos = Math.cos(rotation); const sin = Math.sin(rotation);
+                    const rx = this.x * cos - this.z * sin;
+                    const rz = this.x * sin + this.z * cos;
+                    
+                    this.rotatedZ = rz; 
+
+                    const scale = focal / (focal + rz + 200);
+                    this.projX = width/2 + rx * scale;
+                    this.projY = this.y * scale;
+                    this.projSize = this.size * scale;
+                    this.drawAlpha = this.opacity * scale;
+                    if (rz + 200 < 0) this.drawAlpha = 0;
+                }
+            }
+
+            draw() {
+                if (this.drawAlpha < 0.05) return;
+                
+                if (this.type === P_TYPE.SNOW_KITTY) {
+                    ctx.save();
+                    ctx.translate(this.projX, this.projY);
+                    ctx.rotate(this.ownRotation);
+                    ctx.globalAlpha = this.drawAlpha;
+                    const drawSize = this.projSize * 2.2; 
+                    ctx.drawImage(kittySprite, -drawSize/2, -drawSize/2, drawSize, drawSize);
+                    ctx.restore();
+                    return;
+                }
+
+                if (this.type === P_TYPE.KITTY_ON_TREE) {
+                     ctx.save();
+                     ctx.translate(this.projX, this.projY);
+                     ctx.globalAlpha = this.drawAlpha;
+                     const drawSize = this.projSize * 1.8; 
+                     ctx.drawImage(kittySprite, -drawSize/2, -drawSize/2, drawSize, drawSize);
+                     ctx.restore();
+                     return;
+                }
+
+                ctx.fillStyle = this.color ? (this.color + this.drawAlpha + ')') : `rgba(255,255,255,${this.drawAlpha})`;
+                
+                // 绘制逻辑
+                if (this.type === P_TYPE.TREE || this.type === P_TYPE.ORNAMENT || this.type === P_TYPE.PINK_DUST || this.type === P_TYPE.WHITE_DUST) {
+                    ctx.beginPath(); 
+                    ctx.arc(this.projX, this.projY, this.projSize, 0, Math.PI*2); 
+                    ctx.fill();
+                }
+                else if (this.type === P_TYPE.STAR) {
+                    ctx.save();
+                    ctx.translate(this.projX, this.projY);
+                    ctx.shadowBlur = 10; ctx.shadowColor = 'gold';
+                    ctx.beginPath();
+                    for(let i=0; i<5; i++){
+                        ctx.lineTo(Math.cos((18+i*72)/180*Math.PI)*this.projSize, 
+                                -Math.sin((18+i*72)/180*Math.PI)*this.projSize);
+                        ctx.lineTo(Math.cos((54+i*72)/180*Math.PI)*this.projSize*0.5, 
+                                -Math.sin((54+i*72)/180*Math.PI)*this.projSize*0.5);
+                    }
+                    ctx.fill();
+                    ctx.restore();
+                }
+                else if (this.type === P_TYPE.BOW) {
+                    ctx.save();
+                    ctx.translate(this.projX, this.projY);
+                    ctx.rotate(rotation);
+                    ctx.fillStyle = `rgba(255,105,180,${this.drawAlpha})`;
+                    const s = this.projSize;
+                    ctx.beginPath(); 
+                    ctx.moveTo(0,0); ctx.lineTo(-s, -s*0.8); ctx.lineTo(-s*0.5, -s*0.3); ctx.lineTo(-s, s*0.3); ctx.lineTo(-s, s*0.8); ctx.fill();
+                    ctx.beginPath(); 
+                    ctx.moveTo(0,0); ctx.lineTo(s, -s*0.8); ctx.lineTo(s*0.5, -s*0.3); ctx.lineTo(s, s*0.3); ctx.lineTo(s, s*0.8); ctx.fill();
+                    ctx.restore();
+                }
+            }
+        }
+
+        function createStars() {
+            const starCount = window.innerWidth < 600 ? 50 : 100;
+            for (let i = 0; i < starCount; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.left = `${Math.random() * 100}vw`;
+                star.style.top = `${Math.random() * 100}vh`;
+                star.style.width = `${Math.random() * 3 + 1}px`;
+                star.style.height = star.style.width;
+                star.style.animationDelay = `${Math.random() * 2}s`;
+                star.style.animationDuration = `${Math.random() * 3 + 2}s`;
+                document.body.appendChild(star);
+            }
+        }
+
+        function init() {
+            kittySprite = createKittySprite();
+            particles = [];
+            const isMobile = window.innerWidth < 600;
+            
+            const counts = {
+                TREE: isMobile ? 1500 : 3000,
+                ORNAMENT: isMobile ? 80 : 150,
+                KITTY_ON_TREE: isMobile ? 20 : 40,
+                BOW: isMobile ? 30 : 60,
+                STAR: 30,
+                SNOW_KITTY: isMobile ? 60 : 120,
+                PINK_DUST: isMobile ? 100 : 200, // 这部分现在也会显示为白色
+                WHITE_DUST: isMobile ? 80 : 150 
+            };
+
+            for(let key in counts) {
+                for(let i=0; i<counts[key]; i++) {
+                    particles.push(new Particle(P_TYPE[key]));
+                }
+            }
+            createStars();
+            
+            const music = document.getElementById('bgm');
+            const ctrl = document.querySelector('.music-control');
+            music.play().then(() => {
+                ctrl.classList.add('playing');
+            }).catch(() => {
+                console.log("Waiting for user interaction to play music.");
+            });
+        }
+
+        function animate() {
+            // 背景绘制
+            const gradient = ctx.createRadialGradient(width / 2, height / 2, 0, width / 2, height / 2, Math.max(width, height) * 1.5);
+            gradient.addColorStop(0, 'rgba(50, 15, 30, 0.3)'); // 中心微粉
+            gradient.addColorStop(1, 'rgba(0, 0, 0, 0.3)');    // 边缘黑色
+            
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, width, height);
+
+            rotation += (targetRotation - rotation) * 0.05;
+            targetRotation += 0.002; 
+
+            particles.forEach(p => p.update());
+
+            particles.sort((a, b) => {
+                const zA = a.type === P_TYPE.SNOW_KITTY ? a.z : (a.rotatedZ + 200);
+                const zB = b.type === P_TYPE.SNOW_KITTY ? b.z : (b.rotatedZ + 200);
+                return zB - zA;
+            });
+
+            particles.forEach(p => p.draw());
+
+            requestAnimationFrame(animate);
+        }
+
+        document.addEventListener('mousemove', e => { targetRotation = (e.clientX / width - 0.5) * 2; });
+        document.addEventListener('touchmove', e => { targetRotation = (e.touches[0].clientX / width - 0.5) * 2; });
+        
+        function openCard() { 
+            document.getElementById('cardOverlay').classList.add('active'); 
+            const music = document.getElementById('bgm');
+            if(music.paused) toggleMusic();
+        }
+        function closeCard() { document.getElementById('cardOverlay').classList.remove('active'); }
+        
+        // 打开设置并读取文字
+        function openSettings() { 
+            document.getElementById('settingsOverlay').classList.add('active');
+            
+            const lines = document.querySelectorAll('.msg-line');
+            let currentText = "";
+            lines.forEach((line, index) => {
+                currentText += line.innerText;
+                if(index < lines.length - 1) currentText += "\n";
+            });
+            
+            document.getElementById('messageInput').value = currentText;
+        }
+
+        // 保存设置并更新文字
+        function saveAndCloseSettings() { 
+            document.getElementById('settingsOverlay').classList.remove('active'); 
+            
+            const text = document.getElementById('messageInput').value;
+            const container = document.getElementById('message-container');
+            
+            container.innerHTML = "";
+            
+            const lines = text.split('\n');
+            lines.forEach(lineStr => {
+                if(lineStr.trim() !== "") {
+                    const p = document.createElement('p');
+                    p.className = 'msg-line';
+                    p.innerText = lineStr;
+                    container.appendChild(p);
+                }
+            });
+        }
+
+        // 全屏控制
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.log(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+                });
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        }
+
+        const music = document.getElementById('bgm');
+        const ctrl = document.querySelector('.music-control');
+        function toggleMusic() {
+            if(music.paused) { music.play(); ctrl.classList.add('playing'); }
+            else { music.pause(); ctrl.classList.remove('playing'); }
+        }
+        
+        const photoInput = document.getElementById('photoInput');
+        photoInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if(file) {
+                const reader = new FileReader();
+                reader.onload = function(evt) {
+                    document.getElementById('displayPhoto').src = evt.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        const musicInput = document.getElementById('musicInput');
+        musicInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if(file) {
+                const url = URL.createObjectURL(file);
+                music.src = url;
+                music.play();
+                ctrl.classList.add('playing');
+                alert("背景音乐已更新！🎵");
+            }
+        });
+
+        document.body.addEventListener('click', () => { if(music.paused && music.src) toggleMusic(); }, {once:true});
+
+        init();
+        animate();
+    </script>
+</body>
+</html>
